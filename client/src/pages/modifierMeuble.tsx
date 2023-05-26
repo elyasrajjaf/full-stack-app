@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Alert from "./Alert";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
-export default function Form() {
+export default function ModifierMeuble() {
+
+  const { id } = useParams<{ id: string }>();
+
   const navigate = useNavigate();
 
   const [meuble, setMeuble] = useState({
@@ -11,73 +13,44 @@ export default function Form() {
     category: "",
   });
 
-  const [alert, setAlert] = useState({
-    type: "",
-    message: "",
-  });
+  
+  useEffect(() => {
+      const getMeuble = async () => {
+        const response = await fetch(`http://localhost:8080/meubles/${id}`);
+        const data = await response.json();
+        setMeuble(data);
+      };
+        getMeuble();
+    }, []);
+
+  const updateMeuble = async (meuble: any) => {
+    try {
+      await fetch(`http://localhost:8080/meubles/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(meuble),
+      });
+      navigate("/");
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!meuble.name || !meuble.materiaux || !meuble.category) {
-      setAlert({
-        type: "error",
-        message: "Veuillez remplir tous les champs",
-      });
-
-      setTimeout(() => {
-        setAlert({
-          type: "",
-          message: "",
-        });
-        setMeuble({
-          name: "",
-          materiaux: [],
-          category: "",
-        });
-      }, 3000);
-
-      return;
-    }
-
-    try {
-      fetch("http://localhost:8080/meubles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(meuble),
-      }).then(() => {
-        setAlert({
-          type: "success",
-          message: "Le meuble a bien été créé",
-        });
-      });
-
-      setTimeout(() => {
-        setAlert({
-          type: "",
-          message: "",
-        });
-        setMeuble({
-          name: "",
-          materiaux: [],
-          category: "",
-        });
-
-        navigate("/");
-      }, 3000);
-    } catch (error) {
-      setAlert({
-        type: "error",
-        message: "Une erreur est survenue",
-      });
-    }
+    updateMeuble(meuble);
   };
+
+  if (!meuble) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="mt-10">
       <div className="flex justify-center">
         <form onSubmit={handleSubmit} className="bg-gray-100 p-4 rounded-md shadow-md w-1/3">
-          {alert.type && <Alert type={alert.type} message={alert.message} />}
           <div className="mb-4 p-4">
             <label htmlFor="name" className="w-full">
               Nom du meuble
@@ -86,6 +59,7 @@ export default function Form() {
               type="text"
               id="name"
               onChange={(e) => setMeuble({ ...meuble, name: e.target.value })}
+              value={meuble.name}
               className="rounded-md border-gray-700 border-2 p-2 w-full"
             />
           </div>
@@ -97,9 +71,9 @@ export default function Form() {
               type="text"
               id="materiaux"
               onChange={(e) => setMeuble({ ...meuble, materiaux: e.target.value.split(",") })}
+              value={meuble.materiaux}
               className="rounded-md border-gray-700 border-2 p-2 w-full"
             />
-            <span className="italic text-xs text-gray-700">Rentrez les matériaux de meuble en séparent avec une virgule ",", par exemple: Plastique, Bois, ...</span>
           </div>
           <div className="mb-4 p-4">
             <label htmlFor="category" className="w-full">
@@ -109,11 +83,12 @@ export default function Form() {
               type="text"
               id="category"
               onChange={(e) => setMeuble({ ...meuble, category: e.target.value })}
+              value={meuble.category}
               className="rounded-md border-gray-700 border-2 p-2 w-full"
             />
           </div>
           <button type="submit" className="py-3 px-12 bg-blue-500 text-white rounded-md">
-            Créer
+            Modifier
           </button>
         </form>
       </div>

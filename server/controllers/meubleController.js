@@ -1,4 +1,5 @@
 import Meuble from "../models/Meuble.js";
+import mongoose from "mongoose";
 
 export const getMeubles = async (req, res) => {
   try {
@@ -32,10 +33,26 @@ export const createMeuble = async (req, res) => {
 };
 
 export const updateMeuble = async (req, res) => {
-  const {id} = req.params;
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).send(`Meuble non trouvé: ${id}`);
   const meuble = req.body;
+  try {
+    await Meuble.findByIdAndUpdate(id, meuble, { new: true });
+    res.json(meuble);
+  } catch (error) {
+    res.status(409).json({ message: error.message });
+  }
+};
 
-  if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).send(`Meuble non trouvé: ${id}`); 
+export const deleteMeuble = async (req, res) => {
+  const { id } = req.params;
 
+  if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).send(`Meuble non trouvé: ${id}`);
 
-}
+  try {
+    await Meuble.findByIdAndRemove(id);
+    res.json({ message: "Meuble supprimé avec succès." });
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
